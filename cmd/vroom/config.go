@@ -21,5 +21,7 @@ type (
 		SnubaHost string `env:"SENTRY_SNUBA_HOST" env-default:"http://localhost:1218"`
 
 		BucketURL string `env:"SENTRY_BUCKET_PROFILES" env-default:"file://./test/gcs/sentry-profiles"`
+
+		KafkaClientId string `env:"SENTRY_KAFKA_CLIENT_ID" env-default:"vroom"`
 	}
 )

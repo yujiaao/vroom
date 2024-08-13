@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -64,6 +65,14 @@ func newEnvironment() (*environment, error) {
 		return nil, err
 	}
 
+	transport := &kafka.Transport{
+		Dial: (&net.Dialer{
+			Timeout:   3 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		ClientID: e.config.KafkaClientId,
+	}
+
 	e.occurrencesWriter = &kafka.Writer{
 		Addr:         kafka.TCP(e.config.OccurrencesKafkaBrokers...),
 		Async:        true,
@@ -72,7 +81,9 @@ func newEnvironment() (*environment, error) {
 		ReadTimeout:  3 * time.Second,
 		Topic:        e.config.OccurrencesKafkaTopic,
 		WriteTimeout: 3 * time.Second,
+		Transport:    transport,
 	}
+
 	e.profilingWriter = &kafka.Writer{
 		Addr:         kafka.TCP(e.config.ProfilingKafkaBrokers...),
 		Async:        true,
@@ -82,6 +93,7 @@ func newEnvironment() (*environment, error) {
 		Compression:  kafka.Lz4,
 		ReadTimeout:  3 * time.Second,
 		WriteTimeout: 3 * time.Second,
+		Transport:    transport,
 	}
 	e.metricSummaryWriter = &kafka.Writer{
 		Addr:         kafka.TCP(e.config.SpansKafkaBrokers...),
@@ -91,6 +103,7 @@ func newEnvironment() (*environment, error) {
 		ReadTimeout:  3 * time.Second,
 		Topic:        e.config.MetricsSummaryKafkaTopic,
 		WriteTimeout: 3 * time.Second,
+		Transport:    transport,
 	}
 	e.metricsClient = &http.Client{
 		Timeout: time.Second * 5,
